@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-var commands = require('./commands.json')
+var commands = require('./commands.json');
 
 /**
  * Redis command list
@@ -10,15 +10,16 @@ var commands = require('./commands.json')
  * @var {string[]}
  * @public
  */
-exports.list = Object.keys(commands)
+exports.list = Object.keys(commands);
 
-var flags = {}
+var flags = {};
 exports.list.forEach(function (commandName) {
   flags[commandName] = commands[commandName].flags.reduce(function (flags, flag) {
-    flags[flag] = true
+    flags[flag] = true;
     return flags
   }, {})
-})
+});
+
 /**
  * Check if the command exists
  *
@@ -28,7 +29,7 @@ exports.list.forEach(function (commandName) {
  */
 exports.exists = function (commandName) {
   return Boolean(commands[commandName])
-}
+};
 
 /**
  * Check if the command has the flag
@@ -45,7 +46,7 @@ exports.hasFlag = function (commandName, flag) {
   }
 
   return Boolean(flags[commandName][flag])
-}
+};
 
 /**
  * Get indexes of keys in the command arguments
@@ -64,7 +65,7 @@ exports.hasFlag = function (commandName, flag) {
  * ```
  */
 exports.getKeyIndexes = function (commandName, args, options) {
-  var command = commands[commandName]
+  var command = commands[commandName];
   if (!command) {
     throw new Error('Unknown command ' + commandName)
   }
@@ -73,30 +74,30 @@ exports.getKeyIndexes = function (commandName, args, options) {
     throw new Error('Expect args to be an array')
   }
 
-  var keys = []
-  var i, keyStart, keyStop, parseExternalKey
+  var keys = [];
+  var i, keyStart, keyStop, parseExternalKey;
   switch (commandName) {
     case 'zunionstore':
     case 'zinterstore':
-      keys.push(0)
+      keys.push(0);
     // fall through
     case 'eval':
     case 'evalsha':
-      keyStop = Number(args[1]) + 2
+      keyStop = Number(args[1]) + 2;
       for (i = 2; i < keyStop; i++) {
         keys.push(i)
       }
-      break
+      break;
     case 'sort':
-      parseExternalKey = options && options.parseExternalKey
-      keys.push(0)
+      parseExternalKey = options && options.parseExternalKey;
+      keys.push(0);
       for (i = 1; i < args.length - 1; i++) {
         if (typeof args[i] !== 'string') {
           continue
         }
-        var directive = args[i].toUpperCase()
+        var directive = args[i].toUpperCase();
         if (directive === 'GET') {
-          i += 1
+          i += 1;
           if (args[i] !== '#') {
             if (parseExternalKey) {
               keys.push([i, getExternalKeyNameLength(args[i])])
@@ -105,18 +106,18 @@ exports.getKeyIndexes = function (commandName, args, options) {
             }
           }
         } else if (directive === 'BY') {
-          i += 1
+          i += 1;
           if (parseExternalKey) {
             keys.push([i, getExternalKeyNameLength(args[i])])
           } else {
             keys.push(i)
           }
         } else if (directive === 'STORE') {
-          i += 1
+          i += 1;
           keys.push(i)
         }
       }
-      break
+      break;
     case 'migrate':
       if (args[2] === '') {
         for (i = 5; i < args.length - 1; i++) {
@@ -130,12 +131,12 @@ exports.getKeyIndexes = function (commandName, args, options) {
       } else {
         keys.push(2)
       }
-      break
+      break;
     default:
-    // step has to be at least one in this case, otherwise the command does not contain a key
+      // step has to be at least one in this case, otherwise the command does not contain a key
       if (command.step > 0) {
-        keyStart = command.keyStart - 1
-        keyStop = command.keyStop > 0 ? command.keyStop : args.length + command.keyStop + 1
+        keyStart = command.keyStart - 1;
+        keyStop = command.keyStop > 0 ? command.keyStop : args.length + command.keyStop + 1;
         for (i = keyStart; i < keyStop; i += command.step) {
           keys.push(i)
         }
@@ -144,12 +145,12 @@ exports.getKeyIndexes = function (commandName, args, options) {
   }
 
   return keys
-}
+};
 
-function getExternalKeyNameLength (key) {
+function getExternalKeyNameLength(key) {
   if (typeof key !== 'string') {
     key = String(key)
   }
-  var hashPos = key.indexOf('->')
+  var hashPos = key.indexOf('->');
   return hashPos === -1 ? key.length : hashPos
 }
